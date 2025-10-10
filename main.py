@@ -18,11 +18,13 @@ async def lifespan(app: FastAPI):
 
     # Verifica se a chave da API foi configurada
     if not google_api_key:
-        raise ValueError("A variável de ambiente GOOGLE_API_KEY não foi definida.")
+        print("ERRO CRÍTICO: A variável de ambiente GOOGLE_API_KEY não foi definida.")
+        print("Crie um arquivo .env na raiz do projeto e adicione a linha: GOOGLE_API_KEY='sua_chave_aqui'")
+        raise ValueError("GOOGLE_API_KEY não encontrada.")
 
     # Configura a API do Google e inicializa o modelo
     genai.configure(api_key=google_api_key)
-    app.state.model = genai.GenerativeModel('gemini-1.5-flash-latest')
+    app.state.model = genai.GenerativeModel('gemini-pro')
     # Dicionário para armazenar as sessões de chat em memória
     app.state.chat_sessions = {}
     print("Modelo Gemini carregado com sucesso.")
@@ -40,7 +42,7 @@ app = FastAPI(
 # --- Modelos de Dados (O que a API recebe e devolve) ---
 class ChatRequest(BaseModel):
     message: str
-    session_id: str | None = None # Opcional. Se não for fornecido, uma nova sessão é criada.
+    session_id: str | None = None  # Opcional. Se não for fornecido, uma nova sessão é criada.
 
 class ChatResponse(BaseModel):
     reply: str
@@ -72,8 +74,12 @@ async def handle_chat(chat_request: ChatRequest, request: Request):
         return ChatResponse(reply=response.text, session_id=session_id)
 
     except Exception as e:
-        print(f"Ocorreu um erro: {e}")
-        raise HTTPException(status_code=500, detail="Erro ao processar a mensagem.")
+        # Log do erro detalhado no console para depuração
+        error_message = f"Ocorreu um erro interno: {e}"
+        print(error_message)
+        # Retorna uma mensagem de erro mais informativa se não estiver em produção
+        detail_message = error_message if os.getenv("ENV") != "production" else "Erro ao processar a mensagem."
+        raise HTTPException(status_code=500, detail=detail_message)
 
 @app.get("/")
 def read_root():
