@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
 
     # Configura a API do Google e inicializa o modelo
     genai.configure(api_key=google_api_key)
-    app.state.model = genai.GenerativeModel('gemini-pro')
+    app.state.model = genai.GenerativeModel('gemini-2.5-flash-lite-preview-06-17')
     # Dicionário para armazenar as sessões de chat em memória
     app.state.chat_sessions = {}
     print("Modelo Gemini carregado com sucesso.")

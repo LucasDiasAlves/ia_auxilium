@@ -1,0 +1,6 @@
+pip freeze > requirements.txt
+# fastapi
+# uvicorn[standard]
+# pydantic
+# google-generativeai
+# python-dotenv
