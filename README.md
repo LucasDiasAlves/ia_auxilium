@@ -1,128 +1,260 @@
-# Auxilium IA API
+# Auxilium IA API  
+**Versão 0.6.0 — RAG Híbrido + Suporte a Voz**
 
-**Versão 0.3.0**
+API desenvolvida para o assistente de Inteligência Artificial da plataforma **Auxilium**.  
+Este microserviço, implementado em **Python (FastAPI)**, atua como o núcleo lógico da aplicação, integrando:
 
-API para o assistente de Inteligência Artificial do aplicativo Auxilium. Este é um microserviço em Python (FastAPI) que se conecta aos modelos Google Gemini para processamento de linguagem e ao Supabase para persistência de dados.
-
-## 📝 Sumário
-
-- [Propósito](#-propósito)
-- [Como Funciona (Arquitetura)](#-como-funciona-arquitetura)
-- [Fase do Projeto](#-fase-do-projeto)
-- [Próximos Passos](#-próximos-passos)
-- [Tecnologias Utilizadas](#-tecnologias-utilizadas)
-- [Como Executar o Projeto](#-como-executar-o-projeto)
-- [Endpoints da API](#-endpoints-da-api)
-- [Scripts Utilitários](#-scripts-utilitários)
+- Google Gemini → Inferência cognitiva
+- Supabase → Persistência de dados e memória vetorial
+- Vapi → Infraestrutura para agentes de voz
 
 ---
 
-### 🎯 Propósito
+## 📝 Sumário Executivo
 
-A função deste projeto é servir como o *backend* (a lógica do servidor) para o assistente de IA do app Auxilium. Ele expõe uma API RESTful que:
-1.  Recebe mensagens de um usuário.
-2.  Processa as mensagens usando o modelo `gemini-2.5-flash-lite` do Google.
-3.  Usa o **Supabase** para persistir o histórico da conversa.
-4.  Retorna a resposta da IA, mantendo o contexto de sessões anteriores.
+- 🎯 Objetivo Geral  
+- ⚙️ Arquitetura do Sistema  
+- 🚀 Funcionalidades Implementadas  
+- 🛠️ Stack Tecnológico  
+- ⚙️ Instruções para Execução Local  
+- 📱 Guia de Integração do Frontend  
+- 🔗 Especificação dos Endpoints  
+- 🌐 Procedimentos de Implantação  
 
-### ⚙️ Como Funciona (Arquitetura)
+---
 
-Este serviço funciona como um cérebro de IA com memória externa. O fluxo de dados para o chat é o seguinte:
+## 🎯 Objetivo Geral
+
+Este projeto constitui o **backend inteligente** da plataforma Auxilium, indo além de simples interações textuais e abrangendo:
+
+- Gerenciamento de sessões de estudo.
+- Leitura, indexação e interpretação de documentos PDF.
+- Simulações de entrevistas técnicas por voz com avaliação automatizada.
+
+---
+
+## ⚙️ Arquitetura do Sistema
+
+A aplicação opera sobre três fluxos principais:
+
+### 1. Chat Acadêmico (RAG Híbrido)
+
+**Fluxo:**
+
+- Entrada: Pergunta do usuário.
+- Busca semântica nos PDFs armazenados (Supabase + embeddings).
+- Prioridade de resposta baseada nos documentos.
+- Fallback para conhecimento geral quando necessário.
+- Armazenamento completo do histórico para preservação do contexto.
+
+---
+
+### 2. Ingestão e Processamento de Documentos
+
+**Fluxo:**
+
+- Upload de arquivos PDF.
+- Leitura e fragmentação (chunking).
+- Geração de vetores matemáticos.
+- Armazenamento no Supabase para consultas futuras.
+
+---
+
+### 3. Simulador de Entrevistas Técnicas por Voz
+
+**Fluxo:**
+
+- Geração automática de pauta técnica.
+- Integração com Vapi no Frontend (voz).
+- Recebimento da transcrição da entrevista.
+- Correção automática e geração de nota.
+
+> ⚠️ A API não processa áudio diretamente, somente inteligência e avaliação.
+
+---
+
+## 🚀 Funcionalidades Implementadas
+
+- ✅ Persistência de memória no Supabase  
+- ✅ RAG híbrido com PDFs  
+- ✅ Extração de texto com PyMuPDF  
+- ✅ Geração automática de entrevistas  
+- ✅ Avaliação técnica com nota e feedback qualitativo  
+
+---
+
+## 🛠️ Stack Tecnológico
+
+| Tecnologia      | Descrição |
+|----------------|-----------|
+| Python 3.10+   | Linguagem base |
+| FastAPI        | Framework de API |
+| Google Gemini  | IA e embeddings |
+| Supabase       | Banco relacional + vetorial |
+| PyMuPDF        | Leitura de PDFs |
+| Pydantic       | Validação de dados |
+
+---
+
+## ⚙️ Instruções para Execução Local
+
+### 1. Clonagem e Instalação
+
+```bash
+git clone <url-do-repositorio>
+cd ia_auxilium
+
+python -m venv venv
+
+# Ativação do ambiente virtual:
+# Windows
+.\venv\Scripts\activate
+
+# Mac/Linux
+source venv/bin/activate
+
+# Instalação das dependências
+pip install "fastapi[all]" uvicorn python-dotenv google-generativeai supabase pymupdf python-multipart
+```
 
 
+---
 
-1.  **Requisição:** O App (Frontend) envia um JSON para o endpoint `POST /chat` contendo `pergunta`, `id_usuario` e um `id_sessao` (que pode ser `null` se for uma nova conversa).
-2.  **Validação:** A API (FastAPI/Pydantic) valida os dados. `id_usuario` e `id_sessao` são validados como `UUID`s.
-3.  **Busca de Histórico:** Se um `id_sessao` é fornecido, o servidor consulta o **Supabase** na tabela `interacao_ia` e busca todas as perguntas e respostas anteriores para aquela sessão e usuário.
-4.  **Processamento:** O histórico é montado e enviado ao **Gemini** junto com a nova pergunta.
-5.  **Geração:** O Gemini gera a resposta (`ai_response`).
-6.  **Persistência:** O servidor salva a nova `pergunta` do usuário e a `resposta` da IA como uma **nova linha** na tabela `interacao_ia` do Supabase.
-7.  **Resposta:** A API retorna a `resposta` e o `id_sessao` para o App.
+### 2. Configuração do .env
 
-### 🚀 Fase do Projeto
+## Crie o arquivo .env na raiz:
 
-**Fase: Funcional (Memória Persistente Concluída)**
+```bash
+GOOGLE_API_KEY="sua_chave_google"
+SUPABASE_URL="url_do_projeto"
+SUPABASE_SERVICE_KEY="chave_secreta"
+```
 
-O projeto está estável e funcional. A Prova de Conceito (MVP) da memória de chat está completa.
+---
 
-**Última Atualização (v0.2.6 -> v0.3.0):**
-* **Memória Persistente:** A API agora está 100% integrada com o Supabase. A memória do chat não é mais perdida quando o servidor reinicia.
-* **Conexão Assíncrona:** Corrigido o bug de inicialização (`'coroutine' object has no attribute 'table'`). A API agora usa `create_async_client` corretamente com `await` no `lifespan` do FastAPI.
-* **Validação de UUID:** A API agora é robusta e rejeita requisições (com erro 422) se `id_usuario` ou `id_sessao` não forem UUIDs válidos, protegendo o banco de dados contra entradas malformadas.
+### 3. Preparação do Supabase
 
-### 🏁 Próximos Passos
+## Criar as tabelas:
 
-Agora que a fundação (chat e memória) está sólida, podemos focar nas funcionalidades de IA mais avançadas:
+- interacao_ia
+- documentos_contexto
+- entrevistas
+- feedbacks
 
-1.  **RAG (Retrieval-Augmented Generation):**
-    * **Objetivo:** Fazer a IA responder perguntas com base em documentos da faculdade (PDFs, docs).
-    * **Ação:** Criar novos endpoints (ex: `POST /upload-document`) e usar um Banco deDados Vetorial (como o pgvector do Supabase) para armazenar e consultar o conteúdo dos materiais.
+---
 
-2.  **Chat de Voz (Entrevistas Simuladas):**
-    * **Objetivo:** Implementar os requisitos `RF016` e `RF017`.
-    * **Ação:**
-        * Criar endpoints (`POST /interview/generate` e `POST /interview/feedback`).
-        * Usar o Gemini para gerar perguntas (salvar na tabela `interviews`).
-        * Integrar com um serviço de voz (como Vapi) no frontend.
-        * Receber o *transcript* da entrevista de voz, analisá-lo com o Gemini e salvar na tabela `feedbacks`.
+### 4. Execução do Servidor
 
-3.  **Funções Multimodais:**
-    * **Objetivo:** Permitir que o usuário envie imagens (ex: foto de um exercício).
-    * **Ação:** Criar um endpoint que aceite upload de imagens e o envie ao Gemini (que é multimodal) para análise.
+```bash
+uvicorn main:app --reload
+```
 
-### 🛠️ Tecnologias Utilizadas
+# Acesse:
+```bash
+http://127.0.0.1:8000/docs
+```
 
--   **Python 3.10+**
--   **FastAPI:** Para a construção da API.
--   **Uvicorn:** Servidor ASGI para rodar a aplicação.
--   **Google Generative AI (`gemini-1.5-flash-latest`):** O cérebro da IA.
--   **Supabase (`supabase-py` v2):** Para persistência de dados (histórico de chat).
--   **Pydantic:** Para validação de dados.
--   **python-dotenv:** Para gerenciamento de variáveis de ambiente.
+---
 
-### ⚙️ Como Executar o Projeto
+### 📱 Integração do Frontend
+## 1. Instalação do SDK Vapi
+```bash
+npm install @vapi-ai/web
+```
+---
 
-1.  **Clone o repositório:**
-    ```bash
-    git clone <url-do-seu-repositorio>
-    cd ia_auxilium
-    ```
+## 2. Fluxo da Entrevista
+# Obter perguntas:
+```bash
+npm install @vapi-ai/web
+```
+Salvar:
 
-2.  **Crie e ative um ambiente virtual:**
-    ```bash
-    python -m venv venv
-    # Windows
-    .\venv\Scripts\activate
-    # Linux / macOS
-    source venv/bin/activate
-    ```
+- id_entrevista
+- Lista de perguntas
 
-3.  **Instale as dependências:**
-    ```bash
-    pip install "fastapi[all]" uvicorn python-dotenv google-generativeai "supabase[async]"
-    ```
-    (Após instalar, atualize seu `requirements.txt`: `pip freeze > requirements.txt`)
+# Iniciar chamada de voz:
+```bash
+vapi.start({
+  systemPrompt: perguntas
+})
+```
+# Enviar feedback:
+```bash
+POST /interview/feedback
+```
 
-4.  **Configure as chaves da API:**
-    Crie um arquivo chamado `.env` na raiz do projeto. Ele **precisa** destas 3 chaves:
-    ```
-    GOOGLE_API_KEY="sua_chave_google_aqui"
-    SUPABASE_URL="url_do_seu_projeto_supabase_aqui"
-    SUPABASE_SERVICE_KEY="sua_chave_service_role_secreta_aqui"
-    ```
+Payload:
+- id_entrevista
+- transcript
 
-5.  **Execute o servidor:**
-    ```bash
-    uvicorn main:app --reload
-    ```
-    A API estará disponível em `http://127.0.0.1:8000`.
+Resposta:
+- Nota (0–100)
+- Análise técnica
+- Sugestões de melhoria
 
-### 🔗 Endpoints da API
+---
 
-#### GET /
+### 🔗 Endpoints
+## 📄 Documentos e Chat
 
-Verifica se a API está em execução.
+```POST /upload```
 
-**Exemplo de Resposta (JSON):**
-```json
-{ "status": "Auxilium IA API está funcionando com Supabase!" }
+Upload de documentos PDF para RAG.
+Entrada: PDF, id_usuario
+
+```POST /chat```
+
+Chat com memória e documentos contextuais.
+Entrada: pergunta, id_usuario, id_sessao (opcional)
+
+### 🎙️ Entrevistas
+```POST /interview/generate```
+
+Gera roteiro técnico.
+Entrada:
+
+- topico
+- dificuldade
+
+Saída:
+- Perguntas
+- id_entrevista
+
+```POST /interview/feedback```
+
+# Corrige a entrevista.
+
+Entrada:
+- id_entrevista
+- transcript
+
+Saída:
+- Nota
+- Pontos fortes
+- Melhorias
+
+---
+
+### 🌐 Deployment
+## Opção A — Ngrok (Teste local)
+```ngrok http 8000```
+
+Usar a URL fornecida para integração externa.
+
+## Opção B — Render (Produção)
+# Build:
+
+``` pip install -r requirements.txt ```
+
+
+# Start:
+
+``` uvicorn main:app --host 0.0.0.0 --port $PORT ```
+
+
+Configurar variáveis:
+
+- GOOGLE_API_KEY
+- SUPABASE_URL
+- SUPABASE_SERVICE_KEY
