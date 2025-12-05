@@ -1,0 +1,6 @@
+uvicorn main:app --reload
+ngrok http 8000    
+
+ou
+
+./ngrok http 8000
